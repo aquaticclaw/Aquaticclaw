@@ -770,10 +770,25 @@ async function logout() {
 }
 
 // ============================================================
-// Init
+// Init — check auth first
 // ============================================================
-connectWS();
-renderPanel();
+async function init() {
+  try {
+    const res = await fetch('/api/auth/status', { headers: apiHeaders() });
+    const data = await res.json();
+    if (!data.authenticated) {
+      window.location.href = '/setup';
+      return;
+    }
+  } catch(e) {
+    window.location.href = '/setup';
+    return;
+  }
+  connectWS();
+  renderPanel();
+}
+
+init();
 
 // ============================================================
 // OpenClaw Connect

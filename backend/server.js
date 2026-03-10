@@ -212,13 +212,8 @@ app.get('/setup', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/setup.html'));
 });
 
-// Serve dashboard (protected — redirect to setup if no API key and no dev key)
+// Serve dashboard — let frontend handle auth check via /api/auth/status
 app.get('/', (req, res) => {
-  const sessionId = getSessionId(req);
-  const hasKey = agentManager.apiKeys.has(sessionId) || !!agentManager.devApiKey;
-  if (!hasKey) {
-    return res.redirect('/setup');
-  }
   res.sendFile(path.join(__dirname, '../frontend/dashboard.html'));
 });
 

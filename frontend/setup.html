@@ -254,7 +254,7 @@ async function checkAuth() {
   try {
     const res = await fetch('/api/auth/status', { headers: getHeaders() });
     const data = await res.json();
-    if (data.authenticated) {
+    if (data.authenticated && !data.isDevMode) {
       window.location.href = '/';
     }
   } catch(e) {}
