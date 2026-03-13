@@ -201,6 +201,15 @@ body{background:var(--deep);color:var(--text);font-family:'Syne',sans-serif;heig
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--abyss);border:1px solid var(--glass-border);border-radius:8px;padding:0.6rem 1rem;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text);transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;}
 .toast.show{transform:translateY(0);opacity:1;}
 .empty-state{text-align:center;padding:2rem 1rem;font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);line-height:2;}
+
+.file-item{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;border-radius:6px;background:var(--glass);border:1px solid var(--glass-border);margin-bottom:0.4rem;gap:0.5rem;}
+.file-name{font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--cyan);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-meta{font-family:'Space Mono',monospace;font-size:0.5rem;color:var(--text-dim);white-space:nowrap;}
+.file-actions{display:flex;gap:0.3rem;}
+.file-btn{background:var(--glass);border:1px solid var(--glass-border);color:var(--text-mid);padding:0.2rem 0.5rem;border-radius:4px;font-family:'Space Mono',monospace;font-size:0.5rem;cursor:pointer;transition:all 0.2s;}
+.file-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.file-preview{margin-top:0.4rem;padding:0.6rem;background:var(--mid);border-radius:6px;font-family:'Space Mono',monospace;font-size:0.55rem;color:var(--text);white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;border:1px solid var(--glass-border);}
+.no-files{font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);text-align:center;padding:2rem;line-height:2;}
 </style>
 </head>
 <body>
@@ -273,6 +282,7 @@ body{background:var(--deep);color:var(--text);font-family:'Syne',sans-serif;heig
       <div class="panel-tab active" onclick="switchTab('log',this)">FEED</div>
       <div class="panel-tab" onclick="switchTab('detail',this)">DETAIL</div>
       <div class="panel-tab" onclick="switchTab('chat',this)">CHAT</div>
+      <div class="panel-tab" onclick="switchTab('files',this)">FILES</div>
     </div>
     <div class="panel-body" id="panel-body"></div>
   </div>
@@ -407,6 +417,7 @@ function handleMessage(data) {
 
     case 'WORKSPACE_UPDATE':
       showToast(`📄 ${data.filename} saved by agent`);
+      if (activeTab === 'files') renderFiles();
       break;
 
     case 'OPENCLAW_DISCOVERED':
@@ -537,6 +548,9 @@ function renderPanel() {
       </div>
     `;
   }
+  else if (activeTab === 'files') {
+    renderFiles();
+  }
   else if (activeTab === 'chat') {
     const a = selectedAgentId ? agents[selectedAgentId] : Object.values(agents)[0];
     body.innerHTML = `
@@ -593,13 +607,65 @@ function selectAgent(id) {
   renderPanel();
 }
 
+
+async function renderFiles() {
+  const body = document.getElementById('panel-body');
+  body.innerHTML = '<div class="no-files">⏳ Loading files...</div>';
+  try {
+    const res = await fetch('/api/workspace', { headers: apiHeaders() });
+    const files = await res.json();
+    if (!files.length) {
+      body.innerHTML = '<div class="no-files">📂 No files yet.<br>Agents will save files here when they complete tasks.</div>';
+      return;
+    }
+    body.innerHTML = files.map(f => `
+      <div class="file-item" id="fi-${f.name}">
+        <div style="flex:1;min-width:0;">
+          <div class="file-name">📄 ${f.name}</div>
+          <div class="file-meta">${(f.size/1024).toFixed(1)} KB · ${new Date(f.modified).toLocaleString()}</div>
+        </div>
+        <div class="file-actions">
+          <button class="file-btn" onclick="previewFile('${f.name}')">👁 View</button>
+          <button class="file-btn" onclick="downloadFile('${f.name}')">⬇ Download</button>
+        </div>
+      </div>
+      <div id="preview-${f.name}" style="display:none"></div>
+    `).join('');
+  } catch(e) {
+    body.innerHTML = '<div class="no-files">❌ Failed to load files.</div>';
+  }
+}
+
+async function previewFile(name) {
+  const el = document.getElementById('preview-' + name);
+  if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+  try {
+    const res = await fetch('/api/workspace/' + encodeURIComponent(name), { headers: apiHeaders() });
+    const data = await res.json();
+    el.innerHTML = '<div class="file-preview">' + data.content.replace(/</g,'&lt;') + '</div>';
+    el.style.display = 'block';
+  } catch(e) { el.innerHTML = '<div class="file-preview">Failed to load.</div>'; el.style.display='block'; }
+}
+
+async function downloadFile(name) {
+  try {
+    const res = await fetch('/api/workspace/' + encodeURIComponent(name), { headers: apiHeaders() });
+    const data = await res.json();
+    const blob = new Blob([data.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { showToast('❌ Download failed'); }
+}
+
 function switchTab(tab, el) {
   activeTab = tab;
   document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.panel-tab');
-    const idx = ['log','detail','chat'].indexOf(tab);
+    const idx = ['log','detail','chat','files'].indexOf(tab);
     if (tabs[idx]) tabs[idx].classList.add('active');
   }
   renderPanel();
