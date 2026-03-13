@@ -408,6 +408,10 @@ function handleMessage(data) {
     case 'WORKSPACE_UPDATE':
       showToast(`📄 ${data.filename} saved by agent`);
       break;
+
+    case 'OPENCLAW_DISCOVERED':
+      showToast('🔌 OpenClaw agent discovered: ' + data.agent.name + ' (port ' + data.port + ')');
+      break;
   }
 }
 
@@ -854,14 +858,7 @@ async function manualConnect() {
 
 document.getElementById('connect-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeConnectModal(); });
 
-// Handle OpenClaw discovered event from WS
-const _origHandleMessage = handleMessage;
-function handleMessage(data) {
-  _origHandleMessage(data);
-  if (data.type === 'OPENCLAW_DISCOVERED') {
-    showToast('🔌 OpenClaw agent discovered: ' + data.agent.name + ' (port ' + data.port + ')');
-  }
-}
+// OpenClaw toast is handled inside the main handleMessage below
 
 </script>
 

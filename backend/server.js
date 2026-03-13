@@ -117,14 +117,22 @@ app.get('/api/agents/:id', (req, res) => {
   res.json(agent);
 });
 
-// POST create new agent
+// POST create new agent (and auto-start if task provided)
 app.post('/api/agents', async (req, res) => {
-  const { name, task, emoji } = req.body;
+  const { name, task, emoji, autoStart } = req.body;
   if (!name || !task) return res.status(400).json({ error: 'name and task are required' });
 
   try {
     const sessionId = getSessionId(req);
-    const agent = await agentManager.createAgent({ name, task, emoji, sessionId });
+    const agent = agentManager.createAgent({ name, task, emoji, sessionId });
+    
+    // Auto-start agent immediately (default true)
+    if (autoStart !== false) {
+      agentManager.startAgent(agent.id, task).catch(err => {
+        console.error(`[Agent] Auto-start error for ${agent.name}: ${err.message}`);
+      });
+    }
+
     res.json(agent);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -135,9 +143,13 @@ app.post('/api/agents', async (req, res) => {
 app.post('/api/agents/:id/start', async (req, res) => {
   const { task } = req.body;
   try {
+    const sessionId = getSessionId(req);
+    const agent = agentManager.getAgent(req.params.id);
+    if (agent) agent.sessionId = sessionId; // update session ID
     await agentManager.startAgent(req.params.id, task);
     res.json({ ok: true });
   } catch (err) {
+    console.error('[Start Agent Error]', err.message);
     res.status(500).json({ error: err.message });
   }
 });

@@ -149,7 +149,7 @@ class AgentManager {
       sessionId: sessionId || 'local',
       stats: { calls: 0, tokens: 0, errors: 0, tasksCompleted: 0 },
       logs: [],
-      messages: [], // conversation history
+      messages: [],
       abortController: null,
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -158,7 +158,7 @@ class AgentManager {
     this.agents.set(id, agent);
     this.addLog({ agentId: id, agentName: agent.name, agentEmoji: agent.emoji, type: 'info', message: `Agent ${agent.name} created` });
     this.broadcastAgentUpdate(agent);
-    return agent;
+    return agent; // sync return
   }
 
   getAgent(id) {
@@ -253,7 +253,7 @@ Start working on your task now.`;
 
         const claudeClient = this.getClaudeClient(agent.sessionId || 'local');
         const response = await claudeClient.messages.create({
-          model: 'claude-opus-4-6',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: parseInt(process.env.MAX_TOKENS_PER_AGENT) || 4096,
           system: systemPrompt,
           messages: agent.messages,
@@ -498,7 +498,7 @@ User message: ${userMessage}`
 
     const claudeClient = this.getClaudeClient(agent.sessionId || 'local');
     const response = await claudeClient.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       messages: chatMessages
     });
