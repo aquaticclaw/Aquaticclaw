@@ -777,6 +777,14 @@ async function logout() {
 // Init — check auth first
 // ============================================================
 async function init() {
+  // Auto re-register API key from localStorage (handles server restarts)
+  try {
+    const savedKey = localStorage.getItem('ac_api_key');
+    if (savedKey) {
+      await fetch('/api/auth/apikey', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ apiKey: savedKey }) });
+    }
+  } catch(e) {}
+
   try {
     const res = await fetch('/api/auth/status', { headers: apiHeaders() });
     const data = await res.json();

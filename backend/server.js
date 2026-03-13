@@ -224,13 +224,22 @@ app.get('/setup', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/setup.html'));
 });
 
-// Serve dashboard — let frontend handle auth check via /api/auth/status
+// Production: serve landing. Local dev: serve dashboard directly.
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dashboard.html'));
+  if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, '../frontend/landing.html'));
+  } else {
+    res.sendFile(path.join(__dirname, '../frontend/dashboard.html'));
+  }
 });
 
 app.get('/landing', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/landing.html'));
+});
+
+// /dashboard always serves the dashboard (used from landing CTA)
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dashboard.html'));
 });
 
 // ============================================================

@@ -255,7 +255,7 @@ async function checkAuth() {
     const res = await fetch('/api/auth/status', { headers: getHeaders() });
     const data = await res.json();
     if (data.authenticated && !data.isDevMode) {
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     }
   } catch(e) {}
 }
@@ -315,10 +315,11 @@ async function submitKey() {
     if (data.ok) {
       // Save session ID to localStorage so dashboard can use it
       localStorage.setItem('ac_session_id', getSessionId());
+      localStorage.setItem('ac_api_key', key);
       showStatus('success', '✓ API key verified! Entering the tank...');
       input.classList.add('success');
       btn.textContent = '✓ Entering Tank...';
-      setTimeout(() => { window.location.href = '/'; }, 1200);
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
     } else {
       throw new Error(data.error || 'Validation failed');
     }
