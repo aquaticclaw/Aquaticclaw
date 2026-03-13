@@ -165,6 +165,13 @@ body{
 .fish-row span:nth-child(5){animation-delay:1.2s;}
 @keyframes fish-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
+.back-btn{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  color:var(--text-dim);font-family:'Space Mono',monospace;font-size:0.6rem;
+  text-decoration:none;margin-bottom:1.5rem;transition:color 0.2s;
+  background:none;border:none;cursor:pointer;padding:0;
+}
+.back-btn:hover{color:var(--cyan);}
 .get-key-link{
   display:inline-flex;align-items:center;gap:0.4rem;
   color:var(--cyan);font-family:'Space Mono',monospace;font-size:0.6rem;
@@ -189,6 +196,7 @@ body{
 
 <!-- Setup Card -->
 <div class="setup-card">
+  <a href="/" class="back-btn">← Back to home</a>
   <div class="card-logo">
     <span class="logo-fish">🐠</span>
     Aquatic Claw
