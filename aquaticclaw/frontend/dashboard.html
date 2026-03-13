@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aquatic Claw — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --deep: #010912; --abyss: #020E1C; --mid: #041828; --surface: #062038;
+  --cyan: #00D4FF; --cyan-glow: rgba(0,212,255,0.12); --teal: #00FFD1;
+  --coral: #FF7B54; --amber: #FFB347; --purple: #C084FC; --lime: #7FFF00;
+  --glass: rgba(0,212,255,0.06); --glass-border: rgba(0,212,255,0.12);
+  --text: #B8E4F0; --text-dim: #3A6070; --text-mid: #6AAABB;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--deep);color:var(--text);font-family:'Syne',sans-serif;height:100vh;overflow:hidden;display:grid;grid-template-rows:52px 1fr;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;padding:0 1.2rem;gap:1.5rem;background:rgba(2,11,24,0.98);border-bottom:1px solid var(--glass-border);z-index:10;}
+.logo{font-family:'Space Mono',monospace;font-size:0.9rem;color:var(--cyan);display:flex;align-items:center;gap:0.5rem;white-space:nowrap;}
+.logo-fish{animation:swim 3s ease-in-out infinite;display:inline-block;}
+@keyframes swim{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.tb-stats{display:flex;gap:1rem;flex:1;}
+.tb-stat{display:flex;align-items:center;gap:0.4rem;font-family:'Space Mono',monospace;font-size:0.62rem;}
+.tb-dot{width:6px;height:6px;border-radius:50%;}
+.tb-label{color:var(--text-dim);}
+.tb-val{color:var(--text);font-weight:700;}
+.tb-right{display:flex;gap:0.5rem;margin-left:auto;}
+.tb-btn{background:var(--glass);border:1px solid var(--glass-border);color:var(--text-mid);padding:0.3rem 0.7rem;border-radius:5px;font-family:'Space Mono',monospace;font-size:0.6rem;cursor:pointer;transition:all 0.2s;}
+.tb-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.tb-btn.primary{background:var(--cyan);color:var(--deep);font-weight:700;}
+.tb-btn.primary:hover{background:var(--teal);}
+.connection-dot{width:8px;height:8px;border-radius:50%;background:var(--coral);transition:background 0.3s;}
+.connection-dot.connected{background:var(--teal);box-shadow:0 0 6px var(--teal);}
+
+/* MAIN LAYOUT */
+.main{display:grid;grid-template-columns:240px 1fr 280px;overflow:hidden;}
+
+/* LEFT PANEL */
+.left{background:rgba(4,26,46,0.7);border-right:1px solid var(--glass-border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-hdr{padding:0.8rem 1rem;border-bottom:1px solid var(--glass-border);font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:0.1em;display:flex;align-items:center;justify-content:space-between;}
+.add-btn{width:22px;height:22px;border-radius:4px;background:var(--glass);border:1px solid var(--glass-border);color:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;transition:all 0.2s;line-height:1;}
+.add-btn:hover{background:var(--cyan-glow);border-color:var(--cyan);}
+.agent-list{flex:1;overflow-y:auto;padding:0.4rem;}
+.agent-list::-webkit-scrollbar{width:2px;}
+.agent-list::-webkit-scrollbar-thumb{background:var(--glass-border);}
+.agent-item{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.7rem;border-radius:7px;cursor:pointer;transition:all 0.2s;margin-bottom:0.25rem;border:1px solid transparent;}
+.agent-item:hover{background:var(--glass);border-color:var(--glass-border);}
+.agent-item.selected{background:var(--cyan-glow);border-color:rgba(0,212,255,0.3);}
+.agent-emoji{font-size:1.2rem;flex-shrink:0;}
+.agent-info{flex:1;min-width:0;}
+.agent-name{font-size:0.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.agent-action{font-family:'Space Mono',monospace;font-size:0.5rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.agent-speed{width:100%;height:2px;background:rgba(255,255,255,0.05);border-radius:1px;margin-top:3px;overflow:hidden;}
+.agent-speed-fill{height:100%;border-radius:1px;transition:width 1s ease;}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.status-dot.active{background:var(--teal);box-shadow:0 0 5px var(--teal);}
+.status-dot.idle{background:var(--amber);}
+.status-dot.error{background:var(--coral);box-shadow:0 0 5px var(--coral);animation:err-pulse 1s ease-in-out infinite;}
+.status-dot.done{background:var(--cyan);}
+@keyframes err-pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.idle-section{padding:0.4rem;border-top:1px solid var(--glass-border);}
+.idle-label{font-family:'Space Mono',monospace;font-size:0.55rem;color:var(--text-dim);padding:0.4rem 0.3rem 0.3rem;letter-spacing:0.1em;}
+.idle-chips{display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.2rem;}
+.idle-chip{background:var(--glass);border:1px solid var(--glass-border);border-radius:5px;padding:0.2rem 0.5rem;font-family:'Space Mono',monospace;font-size:0.55rem;color:var(--text-dim);cursor:pointer;transition:all 0.2s;}
+.idle-chip:hover{border-color:var(--amber);color:var(--amber);}
+
+/* AQUARIUM */
+.aquarium{position:relative;overflow:hidden;background:linear-gradient(180deg,#020E1C 0%,#031624 40%,#041E30 75%,#062038 100%);}
+.water-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5),rgba(0,255,209,0.3),rgba(0,212,255,0.5),transparent);animation:shimmer 4s ease-in-out infinite;z-index:5;}
+@keyframes shimmer{0%,100%{opacity:0.4}50%{opacity:1}}
+.caustic{position:absolute;inset:0;background:radial-gradient(ellipse 200px 500px at 15% 0%,rgba(0,212,255,0.04),transparent 70%),radial-gradient(ellipse 150px 400px at 55% 0%,rgba(0,255,209,0.03),transparent 70%),radial-gradient(ellipse 180px 450px at 85% 0%,rgba(0,212,255,0.04),transparent 70%);animation:caustic 7s ease-in-out infinite;pointer-events:none;}
+@keyframes caustic{0%,100%{opacity:0.6}50%{opacity:1}}
+.seabed{position:absolute;bottom:0;left:0;right:0;height:70px;background:linear-gradient(to top,rgba(1,6,12,0.95),transparent);z-index:2;}
+.depth-fog{position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to top,rgba(1,9,18,0.9),transparent);pointer-events:none;z-index:3;}
+.coral{position:absolute;bottom:8px;font-size:1.1rem;opacity:0.45;animation:sway 3.5s ease-in-out infinite;z-index:3;user-select:none;}
+@keyframes sway{0%,100%{transform:rotate(-4deg) translateX(0)}50%{transform:rotate(4deg) translateX(2px)}}
+.bg-fish{position:absolute;font-size:0.55rem;opacity:0.1;pointer-events:none;animation:bgswim linear infinite;}
+@keyframes bgswim{from{transform:translateX(-30px)}to{transform:translateX(110vw)}}
+.legend{position:absolute;top:0.8rem;right:0.8rem;background:rgba(2,11,24,0.85);border:1px solid var(--glass-border);border-radius:7px;padding:0.5rem 0.7rem;font-family:'Space Mono',monospace;font-size:0.5rem;z-index:6;backdrop-filter:blur(4px);}
+.legend-title{color:var(--text-dim);margin-bottom:0.3rem;letter-spacing:0.08em;}
+.legend-row{display:flex;align-items:center;gap:0.35rem;color:var(--text-mid);margin-bottom:0.15rem;}
+.legend-dot{width:5px;height:5px;border-radius:50%;}
+#fish-container{position:absolute;inset:0;z-index:4;}
+.fish-el{position:absolute;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:filter 0.3s;}
+.fish-el:hover{filter:brightness(1.5);}
+.fish-emoji{line-height:1;transition:font-size 0.3s;}
+.fish-pbar{width:32px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;overflow:hidden;}
+.fish-pfill{height:100%;border-radius:1px;transition:width 1.5s ease;}
+.fish-lbl{font-family:'Space Mono',monospace;font-size:0.42rem;color:var(--text-mid);white-space:nowrap;}
+.speech-bubble{position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:rgba(4,26,46,0.9);border:1px solid var(--cyan);border-radius:6px;padding:2px 6px;font-family:'Space Mono',monospace;font-size:0.42rem;color:var(--cyan);white-space:nowrap;pointer-events:none;animation:bbl 4s ease-in-out infinite;backdrop-filter:blur(4px);}
+.speech-bubble::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid var(--cyan);}
+@keyframes bbl{0%,100%{opacity:0;transform:translateX(-50%) translateY(3px)}20%,80%{opacity:1;transform:translateX(-50%) translateY(0)}}
+/* swim keyframes */
+@keyframes sw1{0%{left:-60px;top:22%}48%{left:110%;top:28%}48.1%{left:110%;top:28%;transform:scaleX(-1)}100%{left:-60px;top:22%;transform:scaleX(-1)}}
+@keyframes sw2{0%{left:110%;top:45%;transform:scaleX(-1)}48%{left:-60px;top:38%;transform:scaleX(-1)}48.1%{left:-60px;top:38%}100%{left:110%;top:45%}}
+@keyframes sw3{0%{left:-60px;top:58%}30%{top:42%}70%{top:65%}100%{left:110%;top:58%}}
+@keyframes sw4{0%{left:110%;top:62%;transform:scaleX(-1)}25%{top:75%}75%{top:50%}100%{left:-60px;top:62%;transform:scaleX(-1)}}
+@keyframes sw5{0%{left:-60px;top:32%}100%{left:110%;top:32%}}
+@keyframes sw6{0%{left:110%;top:50%;transform:scaleX(-1)}100%{left:-60px;top:50%;transform:scaleX(-1)}}
+@keyframes sw7{0%{left:-60px;top:70%}100%{left:110%;top:70%}}
+@keyframes idle-float{0%,100%{transform:translateY(0) rotate(3deg)}50%{transform:translateY(-12px) rotate(-3deg)}}
+@keyframes err-shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.bubble-el{position:absolute;border-radius:50%;border:1px solid rgba(0,212,255,0.2);background:rgba(0,212,255,0.03);animation:bup linear infinite;pointer-events:none;z-index:3;}
+@keyframes bup{0%{transform:translateY(0);opacity:0}10%{opacity:0.7}90%{opacity:0.2}100%{transform:translateY(-100vh);opacity:0}}
+/* Tooltip */
+.tooltip{position:fixed;background:rgba(4,26,46,0.97);border:1px solid var(--cyan);border-radius:10px;padding:0.8rem;font-family:'Space Mono',monospace;font-size:0.6rem;pointer-events:none;z-index:1000;min-width:190px;box-shadow:0 0 30px rgba(0,212,255,0.15);display:none;}
+.tt-name{font-size:0.85rem;font-weight:700;color:var(--cyan);margin-bottom:0.4rem;}
+.tt-row{display:flex;justify-content:space-between;gap:1rem;color:var(--text-dim);margin-bottom:0.15rem;}
+.tt-row span:last-child{color:var(--text);}
+.tt-task{border-top:1px solid var(--glass-border);margin-top:0.4rem;padding-top:0.4rem;color:var(--teal);font-size:0.55rem;line-height:1.5;}
+
+/* RIGHT PANEL */
+.right{background:rgba(4,26,46,0.7);border-left:1px solid var(--glass-border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-tabs{display:flex;border-bottom:1px solid var(--glass-border);}
+.panel-tab{flex:1;padding:0.65rem 0.4rem;font-family:'Space Mono',monospace;font-size:0.55rem;text-align:center;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.05em;}
+.panel-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.panel-tab:hover:not(.active){color:var(--text-mid);}
+.panel-body{flex:1;overflow-y:auto;padding:0.8rem;}
+.panel-body::-webkit-scrollbar{width:2px;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--glass-border);}
+
+/* Log feed */
+.log-entry{display:flex;gap:0.5rem;padding:0.4rem 0.6rem;border-left:2px solid var(--glass-border);border-radius:0 5px 5px 0;margin-bottom:0.3rem;font-family:'Space Mono',monospace;font-size:0.55rem;animation:log-in 0.3s ease both;}
+@keyframes log-in{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.log-entry.tool{border-left-color:var(--cyan);}
+.log-entry.think{border-left-color:var(--purple);}
+.log-entry.done{border-left-color:var(--teal);}
+.log-entry.error{border-left-color:var(--coral);}
+.log-entry.progress{border-left-color:var(--amber);}
+.log-entry.chat{border-left-color:var(--lime);}
+.log-time{color:var(--text-dim);flex-shrink:0;}
+.log-agent{flex-shrink:0;}
+.log-msg{color:var(--text);line-height:1.4;word-break:break-all;}
+
+/* Agent detail */
+.detail-header{display:flex;align-items:center;gap:0.7rem;padding:0.7rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:9px;margin-bottom:0.8rem;}
+.detail-emoji{font-size:2rem;}
+.detail-name{font-size:1rem;font-weight:800;}
+.detail-status{font-family:'Space Mono',monospace;font-size:0.58rem;margin-top:2px;}
+.detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.8rem;}
+.dstat{background:var(--glass);border:1px solid var(--glass-border);border-radius:7px;padding:0.5rem;text-align:center;}
+.dstat-val{font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--cyan);display:block;}
+.dstat-lbl{font-size:0.55rem;color:var(--text-dim);margin-top:2px;font-family:'Space Mono',monospace;}
+.task-box{background:var(--glass);border:1px solid var(--glass-border);border-radius:7px;padding:0.6rem;margin-bottom:0.7rem;font-size:0.72rem;line-height:1.5;}
+.pbar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin-top:0.4rem;}
+.pbar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--glass-border);font-family:'Space Mono',monospace;font-size:0.58rem;}
+.mrow-lbl{color:var(--text-dim);}
+.mrow-bar{width:60px;height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
+.mrow-fill{height:100%;border-radius:2px;}
+.mrow-val{color:var(--text);font-weight:700;}
+.actions{display:flex;flex-direction:column;gap:0.4rem;margin-top:0.8rem;}
+.action-btn{background:var(--glass);border:1px solid var(--glass-border);color:var(--text-mid);padding:0.5rem 0.8rem;border-radius:6px;font-family:'Space Mono',monospace;font-size:0.58rem;cursor:pointer;transition:all 0.2s;text-align:left;}
+.action-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.action-btn.danger:hover{border-color:var(--coral);color:var(--coral);}
+.action-btn.go{background:var(--cyan);color:var(--deep);font-weight:700;}
+.action-btn.go:hover{background:var(--teal);}
+
+/* Chat */
+.chat-wrap{display:flex;flex-direction:column;height:100%;}
+.chat-agent-sel{font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text-dim);margin-bottom:0.6rem;padding:0.4rem 0.6rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;display:flex;align-items:center;gap:0.5rem;}
+.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem;}
+.chat-messages::-webkit-scrollbar{width:2px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--glass-border);}
+.cmsg{display:flex;gap:0.4rem;align-items:flex-start;}
+.cmsg-fish{font-size:0.9rem;flex-shrink:0;}
+.cmsg-bubble{background:var(--glass);border:1px solid var(--glass-border);border-radius:0 7px 7px 7px;padding:0.4rem 0.6rem;font-size:0.7rem;color:var(--text);line-height:1.5;max-width:190px;}
+.cmsg.user{flex-direction:row-reverse;}
+.cmsg.user .cmsg-bubble{background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);color:var(--cyan);border-radius:7px 0 7px 7px;}
+.cmsg-name{font-family:'Space Mono',monospace;font-size:0.45rem;color:var(--text-dim);margin-bottom:2px;}
+.chat-input-row{display:flex;gap:0.4rem;border-top:1px solid var(--glass-border);padding-top:0.6rem;}
+.chat-input{flex:1;background:var(--glass);border:1px solid var(--glass-border);border-radius:5px;padding:0.45rem 0.6rem;color:var(--text);font-family:'Space Mono',monospace;font-size:0.6rem;outline:none;}
+.chat-input:focus{border-color:var(--cyan);}
+.chat-input::placeholder{color:var(--text-dim);}
+.chat-send{background:var(--cyan);color:var(--deep);border:none;padding:0.45rem 0.7rem;border-radius:5px;cursor:pointer;font-weight:700;font-size:0.7rem;}
+.chat-send:hover{background:var(--teal);}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(1,9,18,0.85);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-bg.open{display:flex;}
+.modal{background:var(--abyss);border:1px solid var(--glass-border);border-radius:14px;padding:2rem;width:420px;box-shadow:0 0 60px rgba(0,0,0,0.5);}
+.modal-title{font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--cyan);margin-bottom:1.2rem;letter-spacing:0.1em;}
+.form-group{margin-bottom:0.9rem;}
+.form-label{font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text-dim);margin-bottom:0.3rem;display:block;letter-spacing:0.05em;}
+.form-input,.form-textarea{width:100%;background:var(--glass);border:1px solid var(--glass-border);border-radius:7px;padding:0.6rem 0.8rem;color:var(--text);font-family:'Space Mono',monospace;font-size:0.65rem;outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-textarea:focus{border-color:var(--cyan);}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-dim);}
+.form-textarea{height:80px;resize:vertical;}
+.emoji-picker{display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.3rem;}
+.emoji-opt{font-size:1.3rem;cursor:pointer;padding:0.2rem;border-radius:4px;border:1px solid transparent;transition:all 0.15s;}
+.emoji-opt:hover,.emoji-opt.selected{border-color:var(--cyan);background:var(--glass);}
+.modal-actions{display:flex;gap:0.5rem;margin-top:1.2rem;justify-content:flex-end;}
+.modal-btn{padding:0.5rem 1rem;border-radius:6px;font-family:'Space Mono',monospace;font-size:0.62rem;cursor:pointer;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-mid);transition:all 0.2s;}
+.modal-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.modal-btn.primary{background:var(--cyan);color:var(--deep);font-weight:700;border-color:var(--cyan);}
+.modal-btn.primary:hover{background:var(--teal);}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--abyss);border:1px solid var(--glass-border);border-radius:8px;padding:0.6rem 1rem;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text);transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;}
+.toast.show{transform:translateY(0);opacity:1;}
+.empty-state{text-align:center;padding:2rem 1rem;font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);line-height:2;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><span class="logo-fish">🐠</span> Aquatic Claw</div>
+  <div class="tb-stats">
+    <div class="tb-stat"><div class="tb-dot" style="background:var(--teal)"></div><span class="tb-label">active</span><span class="tb-val" id="s-active">0</span></div>
+    <div class="tb-stat"><div class="tb-dot" style="background:var(--amber)"></div><span class="tb-label">idle</span><span class="tb-val" id="s-idle">0</span></div>
+    <div class="tb-stat"><div class="tb-dot" style="background:var(--coral)"></div><span class="tb-label">error</span><span class="tb-val" id="s-error">0</span></div>
+    <div class="tb-stat"><div class="tb-dot" style="background:var(--cyan)"></div><span class="tb-label">tasks done</span><span class="tb-val" id="s-tasks">0</span></div>
+    <div class="tb-stat"><div class="tb-dot" style="background:var(--purple)"></div><span class="tb-label">uptime</span><span class="tb-val" id="s-uptime">00:00:00</span></div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-dot connection-dot" id="conn-dot" title="WebSocket status"></div>
+    <button class="tb-btn" onclick="openLanding()">🌊 Landing</button>
+    <button class="tb-btn" onclick="logout()" title="Change API key">🔑 API Key</button>
+    <button class="tb-btn" onclick="openConnectModal()" title="Connect OpenClaw agent">🔌 OpenClaw</button>
+    <button class="tb-btn primary" onclick="openModal()">+ New Agent</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="panel-hdr">
+      <span>AGENTS (<span id="agent-count">0</span>)</span>
+      <div class="add-btn" onclick="openModal()" title="Add agent">+</div>
+    </div>
+    <div class="agent-list" id="agent-list">
+      <div class="empty-state">🐠<br>No agents yet.<br>Click + to add one.</div>
+    </div>
+    <div class="idle-section">
+      <div class="idle-label">☁ IDLE TANK</div>
+      <div class="idle-chips" id="idle-chips"></div>
+    </div>
+  </div>
+
+  <!-- AQUARIUM -->
+  <div class="aquarium" id="aquarium">
+    <div class="water-line"></div>
+    <div class="caustic"></div>
+    <div class="bg-fish" style="top:18%;animation-duration:28s">🐟🐟🐟</div>
+    <div class="bg-fish" style="top:60%;animation-duration:35s;animation-delay:-12s">🐟🐟</div>
+    <div class="coral" style="left:4%;animation-delay:0s">🪸</div>
+    <div class="coral" style="left:14%;animation-delay:0.6s;font-size:0.9rem">🌿</div>
+    <div class="coral" style="left:30%;animation-delay:1.1s">🪸</div>
+    <div class="coral" style="left:50%;animation-delay:0.4s;font-size:0.8rem">🌱</div>
+    <div class="coral" style="left:65%;animation-delay:0.9s">🪸</div>
+    <div class="coral" style="left:78%;animation-delay:1.3s;font-size:1rem">🌿</div>
+    <div class="coral" style="left:90%;animation-delay:0.6s">🪸</div>
+    <div id="fish-container"></div>
+    <div id="bubble-container"></div>
+    <div class="seabed"></div>
+    <div class="depth-fog"></div>
+    <div class="legend">
+      <div class="legend-title">SPEED = ACTIVITY</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--teal)"></div>Fast = working hard</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--amber)"></div>Slow = idle</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--coral)"></div>Shaking = error</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="switchTab('log',this)">FEED</div>
+      <div class="panel-tab" onclick="switchTab('detail',this)">DETAIL</div>
+      <div class="panel-tab" onclick="switchTab('chat',this)">CHAT</div>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- ADD AGENT MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-title">🐠 SPAWN NEW AGENT</div>
+    <div class="form-group">
+      <label class="form-label">AGENT NAME</label>
+      <input class="form-input" id="m-name" placeholder="Neptune, Coral, Triton..." maxlength="30">
+    </div>
+    <div class="form-group">
+      <label class="form-label">CHOOSE FISH</label>
+      <div class="emoji-picker" id="emoji-picker"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">TASK / MISSION</label>
+      <textarea class="form-textarea" id="m-task" placeholder="What should this agent do? Be specific!&#10;e.g. 'Research the top 5 AI tools of 2025 and write a report'"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="spawnAgent()">🌊 Spawn Agent</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// Session
+// ============================================================
+function getSessionId() {
+  let sid = localStorage.getItem('ac_session_id');
+  if (!sid) {
+    sid = 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('ac_session_id', sid);
+  }
+  return sid;
+}
+
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Session-ID': getSessionId() };
+}
+
+async function apiFetch(url, opts = {}) {
+  opts.headers = { ...apiHeaders(), ...(opts.headers || {}) };
+  const res = await fetch(url, opts);
+  if (res.status === 401) { window.location.href = '/setup'; return null; }
+  return res;
+}
+
+// ============================================================
+// State
+// ============================================================
+let agents = {};
+let logs = [];
+let selectedAgentId = null;
+let activeTab = 'log';
+let ws = null;
+let uptimeStart = Date.now();
+let selectedEmoji = '🐠';
+
+const EMOJIS = ['🐠','🐡','🐬','🦈','🐙','🦐','🐟','🦑','🐳','🦀'];
+const SWIM_ANIMS = ['sw1','sw2','sw3','sw4','sw5','sw6','sw7'];
+
+// ============================================================
+// WebSocket
+// ============================================================
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+
+  ws.onopen = () => {
+    document.getElementById('conn-dot').classList.add('connected');
+    showToast('🌊 Connected to Aquatic Claw');
+  };
+
+  ws.onclose = () => {
+    document.getElementById('conn-dot').classList.remove('connected');
+    setTimeout(connectWS, 3000);
+  };
+
+  ws.onerror = () => {
+    document.getElementById('conn-dot').classList.remove('connected');
+  };
+
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    handleMessage(data);
+  };
+}
+
+function handleMessage(data) {
+  switch (data.type) {
+    case 'INIT':
+      data.agents.forEach(a => { agents[a.id] = a; });
+      data.logs.forEach(l => logs.push(l));
+      renderAll();
+      break;
+
+    case 'AGENT_UPDATE':
+      agents[data.agent.id] = data.agent;
+      renderAgentList();
+      renderFish();
+      updateStats();
+      if (selectedAgentId === data.agent.id && activeTab === 'detail') renderPanel();
+      break;
+
+    case 'AGENT_DELETED':
+      delete agents[data.agentId];
+      if (selectedAgentId === data.agentId) selectedAgentId = null;
+      renderAll();
+      break;
+
+    case 'LOG':
+      logs.push(data.log);
+      if (logs.length > 300) logs.shift();
+      if (activeTab === 'log') appendLog(data.log);
+      break;
+
+    case 'CHAT_MESSAGE':
+      if (activeTab === 'chat') appendChatMsg(data.from, data.emoji, data.message, false);
+      break;
+
+    case 'WORKSPACE_UPDATE':
+      showToast(`📄 ${data.filename} saved by agent`);
+      break;
+
+    case 'OPENCLAW_DISCOVERED':
+      showToast('🔌 OpenClaw agent discovered: ' + data.agent.name + ' (port ' + data.port + ')');
+      break;
+  }
+}
+
+// ============================================================
+// Render
+// ============================================================
+function renderAll() {
+  renderAgentList();
+  renderFish();
+  renderPanel();
+  updateStats();
+}
+
+function renderAgentList() {
+  const active = Object.values(agents).filter(a => a.status !== 'idle' && a.status !== 'done');
+  const idle = Object.values(agents).filter(a => a.status === 'idle' || a.status === 'done');
+
+  const list = document.getElementById('agent-list');
+  document.getElementById('agent-count').textContent = Object.keys(agents).length;
+
+  if (active.length === 0 && idle.length === 0) {
+    list.innerHTML = '<div class="empty-state">🐠<br>No agents yet.<br>Click + to add one.</div>';
+  } else {
+    list.innerHTML = active.map(a => agentItemHTML(a)).join('');
+  }
+
+  const chips = document.getElementById('idle-chips');
+  chips.innerHTML = idle.map(a => `
+    <div class="idle-chip" onclick="selectAgent('${a.id}')">${a.emoji} ${a.name}</div>
+  `).join('');
+}
+
+function agentItemHTML(a) {
+  const speedColor = a.status === 'error' ? 'var(--coral)' : a.status === 'done' ? 'var(--cyan)' : a.color || 'var(--teal)';
+  return `
+    <div class="agent-item ${selectedAgentId === a.id ? 'selected' : ''}" onclick="selectAgent('${a.id}')">
+      <span class="agent-emoji">${a.emoji}</span>
+      <div class="agent-info">
+        <div class="agent-name">${a.name}</div>
+        <div class="agent-action">${(a.currentAction || '').slice(0,38)}</div>
+        <div class="agent-speed"><div class="agent-speed-fill" style="width:${(a.speed||0)*100}%;background:${speedColor}"></div></div>
+      </div>
+      <div class="status-dot ${a.status}"></div>
+    </div>
+  `;
+}
+
+function renderFish() {
+  const container = document.getElementById('fish-container');
+  const active = Object.values(agents).filter(a => a.status === 'active' || a.status === 'error');
+
+  container.innerHTML = active.map((a, i) => {
+    const anim = SWIM_ANIMS[i % SWIM_ANIMS.length];
+    const speed = a.speed > 0 ? 1 / a.speed : 30;
+    const dur = (8 + i * 3) * speed;
+    const delay = i * -3.5;
+    const size = 1.4 + (a.speed || 0.3);
+    const glowStr = (a.speed || 0.3) * 14;
+    const isError = a.status === 'error';
+    const color = a.color || 'var(--cyan)';
+
+    const showBubble = a.status === 'active' && a.speed > 0.4 && a.currentAction;
+    const bubbleText = a.currentAction ? a.currentAction.slice(0,25) + (a.currentAction.length > 25 ? '...' : '') : '';
+
+    return `
+      <div class="fish-el" id="fish-${a.id}" style="
+        animation: ${anim} ${dur}s linear infinite ${delay}s;
+        filter: drop-shadow(0 0 ${glowStr}px ${color});
+      "
+        onmouseenter="showTT(event,'${a.id}')"
+        onmouseleave="hideTT()"
+        onclick="selectAgent('${a.id}')"
+      >
+        ${showBubble ? `<div class="speech-bubble" style="border-color:${color};color:${color};animation-delay:${i*0.9}s">${bubbleText}</div>` : ''}
+        <div class="fish-pbar"><div class="fish-pfill" style="width:${a.progress||0}%;background:${color}"></div></div>
+        <div class="fish-emoji" style="font-size:${size}rem;${isError ? 'animation:err-shake 0.4s linear infinite' : ''}">${a.emoji}</div>
+        <div class="fish-lbl">${a.name}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPanel() {
+  const body = document.getElementById('panel-body');
+
+  if (activeTab === 'log') {
+    body.innerHTML = '<div id="log-feed">' +
+      [...logs].reverse().slice(0, 60).map(logHTML).join('') +
+      '</div>';
+  }
+  else if (activeTab === 'detail') {
+    const a = selectedAgentId ? agents[selectedAgentId] : null;
+    if (!a) { body.innerHTML = '<div class="empty-state">🐠<br>Click a fish<br>to inspect</div>'; return; }
+
+    const sColor = a.status === 'active' ? 'var(--teal)' : a.status === 'error' ? 'var(--coral)' : a.status === 'done' ? 'var(--cyan)' : 'var(--amber)';
+    body.innerHTML = `
+      <div class="detail-header">
+        <div class="detail-emoji">${a.emoji}</div>
+        <div>
+          <div class="detail-name">${a.name}</div>
+          <div class="detail-status" style="color:${sColor}">● ${(a.status||'idle').toUpperCase()} — ${Math.round((a.speed||0)*100)}% speed</div>
+        </div>
+      </div>
+      <div class="detail-stats">
+        <div class="dstat"><span class="dstat-val">${(a.stats?.calls||0).toLocaleString()}</span><span class="dstat-lbl">API CALLS</span></div>
+        <div class="dstat"><span class="dstat-val">${fmtTokens(a.stats?.tokens||0)}</span><span class="dstat-lbl">TOKENS</span></div>
+        <div class="dstat"><span class="dstat-val" style="color:${a.stats?.errors>0?'var(--coral)':'var(--teal)'}">${a.stats?.errors||0}</span><span class="dstat-lbl">ERRORS</span></div>
+        <div class="dstat"><span class="dstat-val">${a.stats?.tasksCompleted||0}</span><span class="dstat-lbl">DONE</span></div>
+      </div>
+      <div class="task-box">
+        <div style="font-family:'Space Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-bottom:0.4rem;">CURRENT TASK</div>
+        ${a.task || 'No task assigned.'}
+        <div class="pbar"><div class="pbar-fill" style="width:${a.progress||0}%;background:${a.color||'var(--cyan)'}"></div></div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:3px;">${a.progress||0}% complete</div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:0.4rem;">NOW</div>
+      <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:0.8rem;line-height:1.5;">${a.currentAction||'—'}</div>
+      <div class="actions">
+        ${a.status !== 'active' ? `<button class="action-btn go" onclick="startAgentPrompt('${a.id}')">▶ Start / New Task</button>` : ''}
+        ${a.status === 'active' ? `<button class="action-btn danger" onclick="stopAgent('${a.id}')">⏹ Stop Agent</button>` : ''}
+        <button class="action-btn" onclick="switchTab('chat',null);document.getElementById('panel-body').scrollTop=9999;">💬 Chat with ${a.name}</button>
+        <button class="action-btn danger" onclick="deleteAgent('${a.id}')">🗑 Remove Agent</button>
+      </div>
+    `;
+  }
+  else if (activeTab === 'chat') {
+    const a = selectedAgentId ? agents[selectedAgentId] : Object.values(agents)[0];
+    body.innerHTML = `
+      <div class="chat-wrap">
+        <div class="chat-agent-sel">
+          ${a ? a.emoji + ' ' + a.name : '🐠 Select an agent'}
+          ${!a ? ' — click a fish first' : ''}
+        </div>
+        <div class="chat-messages" id="chat-msgs">
+          ${a ? `<div class="cmsg"><span class="cmsg-fish">${a.emoji}</span><div><div class="cmsg-name">${a.name}</div><div class="cmsg-bubble">Hey! I'm ${a.name}. Current task: "${a.task || 'nothing yet'}". Progress: ${a.progress||0}%.</div></div></div>` : ''}
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chat-input" placeholder="${a ? 'Message ' + a.name + '...' : 'Select an agent first'}" ${!a?'disabled':''} onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="chat-send" onclick="sendChat()" ${!a?'disabled':''}>→</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function logHTML(l) {
+  const t = new Date(l.time).toLocaleTimeString('en-US', {hour12:false});
+  return `<div class="log-entry ${l.type||'info'}"><span class="log-time">${t}</span><span class="log-agent">${l.agentEmoji||'🤖'}</span><span class="log-msg">${escHtml(l.message)}</span></div>`;
+}
+
+function appendLog(l) {
+  const feed = document.getElementById('log-feed');
+  if (!feed) return;
+  const div = document.createElement('div');
+  div.innerHTML = logHTML(l);
+  feed.insertBefore(div.firstChild, feed.firstChild);
+  // Limit DOM entries
+  while (feed.children.length > 80) feed.removeChild(feed.lastChild);
+}
+
+function appendChatMsg(name, emoji, msg, isUser) {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'cmsg' + (isUser ? ' user' : '');
+  div.innerHTML = isUser
+    ? `<div><div class="cmsg-name" style="text-align:right">You</div><div class="cmsg-bubble">${escHtml(msg)}</div></div>`
+    : `<span class="cmsg-fish">${emoji}</span><div><div class="cmsg-name">${name}</div><div class="cmsg-bubble">${escHtml(msg)}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ============================================================
+// Actions
+// ============================================================
+function selectAgent(id) {
+  selectedAgentId = id;
+  renderAgentList();
+  renderPanel();
+}
+
+function switchTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else {
+    const tabs = document.querySelectorAll('.panel-tab');
+    const idx = ['log','detail','chat'].indexOf(tab);
+    if (tabs[idx]) tabs[idx].classList.add('active');
+  }
+  renderPanel();
+}
+
+async function stopAgent(id) {
+  await apiFetch(`/api/agents/${id}/stop`, { method:'POST' });
+  showToast('⏹ Agent stopped');
+}
+
+async function deleteAgent(id) {
+  if (!confirm('Remove this agent from the tank?')) return;
+  await apiFetch(`/api/agents/${id}`, { method:'DELETE' });
+  if (selectedAgentId === id) selectedAgentId = null;
+  showToast('🗑 Agent removed');
+}
+
+function startAgentPrompt(id) {
+  const a = agents[id];
+  if (!a) return;
+  const task = prompt(`New task for ${a.name}:`, a.task || '');
+  if (task !== null && task.trim()) startAgent(id, task.trim());
+}
+
+async function startAgent(id, task) {
+  await apiFetch(`/api/agents/${id}/start`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ task })
+  });
+  showToast(`🚀 ${agents[id]?.name} started!`);
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  if (!input || !input.value.trim() || !selectedAgentId) return;
+  const msg = input.value.trim();
+  input.value = '';
+  appendChatMsg('You', '👤', msg, true);
+  try {
+    const res = await apiFetch(`/api/agents/${selectedAgentId}/chat`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg })
+    });
+    const data = await res.json();
+    if (data.reply) appendChatMsg(agents[selectedAgentId]?.name||'Agent', agents[selectedAgentId]?.emoji||'🐠', data.reply, false);
+  } catch(e) {
+    appendChatMsg('System','⚠️','Chat failed: ' + e.message, false);
+  }
+}
+
+// Modal
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('m-name').focus();
+  const picker = document.getElementById('emoji-picker');
+  picker.innerHTML = EMOJIS.map(e => `<div class="emoji-opt ${e===selectedEmoji?'selected':''}" onclick="selectEmoji('${e}',this)">${e}</div>`).join('');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function selectEmoji(e, el) {
+  selectedEmoji = e;
+  document.querySelectorAll('.emoji-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function spawnAgent() {
+  const name = document.getElementById('m-name').value.trim();
+  const task = document.getElementById('m-task').value.trim();
+  if (!name) { showToast('⚠️ Enter a name!'); return; }
+  if (!task) { showToast('⚠️ Enter a task!'); return; }
+
+  closeModal();
+  const res = await apiFetch('/api/agents', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, task, emoji: selectedEmoji })
+  });
+  const agent = await res.json();
+  if (agent.id) {
+    agents[agent.id] = agent;
+    selectedAgentId = agent.id;
+    renderAll();
+    // Auto-start
+    await startAgent(agent.id, task);
+    showToast(`🐠 ${name} spawned and swimming!`);
+    document.getElementById('m-name').value = '';
+    document.getElementById('m-task').value = '';
+  }
+}
+
+// Tooltip
+function showTT(e, id) {
+  const a = agents[id]; if (!a) return;
+  const tt = document.getElementById('tooltip');
+  const sColor = a.status==='active'?'var(--teal)':a.status==='error'?'var(--coral)':'var(--amber)';
+  tt.innerHTML = `
+    <div class="tt-name">${a.emoji} ${a.name}</div>
+    <div class="tt-row"><span>Status</span><span style="color:${sColor}">● ${(a.status||'idle').toUpperCase()}</span></div>
+    <div class="tt-row"><span>Speed</span><span>${Math.round((a.speed||0)*100)}%</span></div>
+    <div class="tt-row"><span>Progress</span><span>${a.progress||0}%</span></div>
+    <div class="tt-row"><span>API calls</span><span>${(a.stats?.calls||0).toLocaleString()}</span></div>
+    <div class="tt-row"><span>Tokens</span><span>${fmtTokens(a.stats?.tokens||0)}</span></div>
+    <div class="tt-row"><span>Errors</span><span style="color:${(a.stats?.errors||0)>0?'var(--coral)':'var(--teal)'}">${a.stats?.errors||0}</span></div>
+    <div class="tt-task">↳ ${(a.currentAction||'—').slice(0,100)}</div>
+  `;
+  tt.style.display = 'block';
+  moveTT(e);
+}
+function moveTT(e) {
+  const tt = document.getElementById('tooltip');
+  tt.style.left = (e.clientX+15)+'px';
+  tt.style.top = (e.clientY-20)+'px';
+}
+function hideTT() { document.getElementById('tooltip').style.display='none'; }
+document.addEventListener('mousemove', e => {
+  const tt = document.getElementById('tooltip');
+  if (tt.style.display==='block') moveTT(e);
+});
+
+// Stats
+function updateStats() {
+  const vals = Object.values(agents);
+  document.getElementById('s-active').textContent = vals.filter(a=>a.status==='active').length;
+  document.getElementById('s-idle').textContent = vals.filter(a=>a.status==='idle'||a.status==='done').length;
+  document.getElementById('s-error').textContent = vals.filter(a=>a.status==='error').length;
+}
+
+// Uptime
+setInterval(() => {
+  const s = Math.floor((Date.now()-uptimeStart)/1000);
+  document.getElementById('s-uptime').textContent =
+    `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}, 1000);
+
+// Bubbles
+setInterval(() => {
+  const c = document.getElementById('bubble-container');
+  if (!c) return;
+  const b = document.createElement('div');
+  b.className = 'bubble-el';
+  const size = Math.random()*7+3;
+  b.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*95}%;bottom:${Math.random()*25+5}%;animation-duration:${Math.random()*4+3}s;animation-delay:${Math.random()}s;`;
+  c.appendChild(b);
+  setTimeout(()=>b.remove(), 8000);
+}, 700);
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Helpers
+function fmtTokens(n) { return n > 1000000 ? (n/1000000).toFixed(1)+'M' : n > 1000 ? (n/1000).toFixed(1)+'K' : n.toString(); }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function openLanding() { window.open('/landing','_blank'); }
+
+// Close modal on bg click
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+// ============================================================
+// Logout / Change API key
+// ============================================================
+async function logout() {
+  if (!confirm('Change your API key? You will be redirected to setup.')) return;
+  await apiFetch('/api/auth/apikey', { method: 'DELETE' });
+  localStorage.removeItem('ac_session_id');
+  window.location.href = '/setup';
+}
+
+// ============================================================
+// Init — check auth first
+// ============================================================
+async function init() {
+  // Auto re-register API key from localStorage (handles server restarts)
+  try {
+    const savedKey = localStorage.getItem('ac_api_key');
+    if (savedKey) {
+      await fetch('/api/auth/apikey', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ apiKey: savedKey }) });
+    }
+  } catch(e) {}
+
+  try {
+    const res = await fetch('/api/auth/status', { headers: apiHeaders() });
+    const data = await res.json();
+    if (!data.authenticated) {
+      window.location.href = '/setup';
+      return;
+    }
+  } catch(e) {
+    window.location.href = '/setup';
+    return;
+  }
+  connectWS();
+  renderPanel();
+}
+
+init();
+
+// ============================================================
+// OpenClaw Connect
+// ============================================================
+function openConnectModal() {
+  document.getElementById('connect-modal').classList.add('open');
+  scanOpenClaw();
+}
+function closeConnectModal() {
+  document.getElementById('connect-modal').classList.remove('open');
+}
+
+async function scanOpenClaw() {
+  const status = document.getElementById('oc-scan-status');
+  const list = document.getElementById('oc-agent-list');
+  status.textContent = 'Scanning ports 8000-8020...';
+  list.innerHTML = '<div style="color:var(--text-dim);font-size:0.6rem;padding:0.5rem;">Scanning...</div>';
+  try {
+    const res = await apiFetch('/api/openclaw/scan');
+    const data = await res.json();
+    const agents = await apiFetch('/api/openclaw/agents').then(r => r.json());
+    if (agents.length === 0) {
+      status.textContent = 'No OpenClaw agents found on localhost';
+      list.innerHTML = '<div style="color:var(--text-dim);font-size:0.6rem;padding:0.5rem;line-height:1.8;">No agents detected.<br>Make sure OpenClaw is running<br>on ports 8000-8020.</div>';
+    } else {
+      status.textContent = agents.length + ' agent(s) found!';
+      list.innerHTML = agents.map(a => `
+        <div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.7rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:7px;margin-bottom:0.3rem;">
+          <span style="font-size:1.2rem">${a.agent?.emoji||'🦞'}</span>
+          <div style="flex:1">
+            <div style="font-size:0.8rem;font-weight:700">${a.agent?.name||'OpenClaw Agent'}</div>
+            <div style="font-family:Space Mono,monospace;font-size:0.5rem;color:var(--text-dim)">port ${a.port} · ${a.agent?.status||'unknown'}</div>
+          </div>
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--teal)"></div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    status.textContent = 'Scan failed: ' + e.message;
+  }
+}
+
+async function manualConnect() {
+  const port = document.getElementById('oc-port').value;
+  if (!port) { showToast('Enter a port number'); return; }
+  try {
+    const res = await apiFetch('/api/openclaw/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ port: parseInt(port) })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('🔌 Connected to port ' + port + '!');
+      scanOpenClaw();
+    } else {
+      showToast('❌ ' + data.error);
+    }
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+document.getElementById('connect-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeConnectModal(); });
+
+// OpenClaw toast is handled inside the main handleMessage below
+
+</script>
+
+<!-- OPENCLAW CONNECT MODAL -->
+<div class="modal-bg" id="connect-modal">
+  <div class="modal">
+    <div class="modal-title">🔌 CONNECT OPENCLAW AGENT</div>
+    <div style="font-family:Space Mono,monospace;font-size:0.58rem;color:var(--text-dim);margin-bottom:1rem;line-height:1.7;">
+      Aquatic Claw auto-scans localhost ports 8000–8020.<br>
+      Make sure your OpenClaw agent is running first.
+    </div>
+    <div style="font-family:Space Mono,monospace;font-size:0.58rem;color:var(--text-dim);margin-bottom:0.4rem;letter-spacing:0.08em;">SCAN RESULT</div>
+    <div id="oc-scan-status" style="font-family:Space Mono,monospace;font-size:0.62rem;color:var(--cyan);margin-bottom:0.6rem;">—</div>
+    <div id="oc-agent-list" style="margin-bottom:1rem;max-height:160px;overflow-y:auto;"></div>
+    <div style="font-family:Space Mono,monospace;font-size:0.58rem;color:var(--text-dim);margin-bottom:0.4rem;letter-spacing:0.08em;">MANUAL CONNECT</div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+      <input class="form-input" id="oc-port" placeholder="Port number e.g. 8001" type="number" style="flex:1">
+      <button class="modal-btn primary" onclick="manualConnect()">Connect</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="scanOpenClaw()">🔍 Re-scan</button>
+      <button class="modal-btn" onclick="closeConnectModal()">Close</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+<!-- This file is complete - OpenClaw additions below are appended via patch -->
